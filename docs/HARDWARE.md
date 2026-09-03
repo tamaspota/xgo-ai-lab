@@ -4,7 +4,7 @@ Updated: 2026-09-03
 
 ## XGO-Mini
 
-Status: physically available and connected to the Windows PC for first passive discovery.
+Status: physically available and connected to the Windows PC for safe bring-up.
 
 Known from project context:
 
@@ -21,21 +21,30 @@ Baseline with XGO disconnected:
 - HWID: `ACPI\\PNP0501\\0`;
 - no USB VID/PID reported.
 
-After connecting the XGO:
+Initial connection before driver installation:
 
-- no new COM port appeared yet;
-- Windows Device Manager did detect a new device under `Other devices`;
-- detected name: **CP2102 USB to UART Bridge Controller**;
-- the device shows a warning icon, consistent with the VCP driver not being installed/loaded.
+- Windows Device Manager detected **CP2102 USB to UART Bridge Controller** under `Other devices`;
+- device showed a warning icon;
+- no additional COM port was available.
 
-Interpretation: the physical USB connection is working far enough for Windows to enumerate the CP2102 USB-UART bridge. The current blocker is the Windows CP210x VCP driver, not an absent USB device.
+After installing the Silicon Labs CP210x VCP driver:
 
-Next hardware check after driver installation:
+- assigned port: **COM3**;
+- description: `Silicon Labs CP210x USB to UART Bridge (COM3)`;
+- manufacturer: `Silicon Labs`;
+- HWID: `USB VID:PID=10C4:EA60 SER=0001 LOCATION=1-2`;
+- USB VID:PID: **10C4:EA60**;
+- serial: `0001`;
+- USB location: `1-2`.
 
-- confirm device moves from `Other devices` to `Ports (COM & LPT)`;
-- record assigned COM port;
-- record VID/PID and hardware ID from Device Manager or `list_serial_ports.py`;
-- do not send protocol or motion commands yet.
+Interpretation: the PC-to-robot USB path exposes a working Silicon Labs CP210x USB-UART bridge. No separate USB-UART adapter is currently required for the first protocol test.
+
+Next hardware/protocol check:
+
+- use `COM3` at the upstream default `115200` baud;
+- run only the repository's explicit firmware-version READ probe;
+- do not instantiate the current high-level `xgolib` class yet;
+- do not flash firmware or send motion/reset/action commands.
 
 Still to record later:
 
@@ -66,6 +75,7 @@ Reviewed 2026-09-03 from `LuwuDynamics/xgo_doglib` commit `cf72514273dc703284d3c
 - public `XGO()` entry point accepts serial port and baud arguments;
 - default baud is 115200;
 - `xgomini` is an explicitly supported device version;
-- the current dog implementation performs a reset during initialization, therefore it is not used during passive bring-up.
+- firmware version is read from address `0x07`, length 10, using protocol read mode `0x02`;
+- the current dog implementation performs a reset during initialization, therefore it is not used during initial bring-up.
 
 These upstream facts do **not** yet prove compatibility with the installed 2021-era firmware.
