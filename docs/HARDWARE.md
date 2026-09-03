@@ -24,6 +24,18 @@ RobotShop's discontinued legacy XGO-Mini page (`RB-Xgo-01`, manufacturer `XGO-MI
 
 This is materially different from current XGO-Mini generations whose lower-board documentation uses ESP32.
 
+### Installed firmware indication
+
+Tamás reports that the powered LCD shows firmware/version text approximately matching:
+
+`xgo-210722`
+
+This closely matches a historical K210 recovery package named:
+
+`xgo-ai-module-firmware-210722-en-2021-07-22-14-48-10.kfpkg`
+
+Interpretation: strong evidence that the installed K210 software belongs to the original July 22, 2021 software family. Exact binary identity is not proven.
+
 ### 2026-09-03 Windows discovery
 
 Baseline with XGO disconnected:
@@ -51,21 +63,44 @@ Raw XGO motion-controller firmware-read query at 115200:
 
 Result: **no response**.
 
-K210 serial passive probe:
+K210 serial passive probe first run:
 
 ```text
 passive RX bytes: 6
 hex: 0d 0a 0d 0a 0d 0a
 ```
 
-Interpretation: three CR/LF pairs were received, so COM3 is not a completely dead serial path.
+Later 20-second passive run:
+
+```text
+passive RX bytes: 0
+<none>
+```
 
 K210 Ctrl-C / MicroPython REPL probe:
 
 - no bytes returned after Ctrl-C;
 - no `>>>` prompt detected.
 
-Historical K210 source shows a custom menu application running from flash/SD rather than requiring a plain REPL, so this result does not establish K210 failure.
+Historical K210 source shows a custom menu application, so no plain REPL is expected evidence of neither success nor failure.
+
+### Historical built-in self-test
+
+The period `sd/main.py` can enter test mode by holding the **left/A button during boot** while the right/B button is not held. It executes `/sd/device_test.py`.
+
+The historical self-test checks:
+
+- LCD;
+- camera;
+- microphone;
+- SD card;
+- speaker;
+- A/B/C buttons;
+- LEDs.
+
+The SD stage lists `/sd` and requires `try_demo.py` to exist. This is the preferred next method to determine whether the advertised 16 GB SD card is physically present, mounted and populated, without opening the robot first.
+
+See `docs/FACTORY_SELF_TEST.md`.
 
 ### Historical direct motion-controller interface
 
@@ -85,7 +120,7 @@ A public historical `XgoAI` source tree contains a dated English K210 firmware p
 
 `xgo-ai-module-firmware-210722-en-2021-07-22-14-48-10.kfpkg`
 
-and an SD application tree including `main.py`, `xgo.py`, demo and asset directories. This closely matches the legacy RobotShop/manual architecture, but the repository is not yet verified as an official vendor source. See `docs/RECOVERY_SOURCES.md`.
+and an SD application tree including `main.py`, `xgo.py`, demo and asset directories. This closely matches the legacy RobotShop/manual architecture, but the repository is not verified as a current official vendor source. See `docs/RECOVERY_SOURCES.md`.
 
 ### Firmware compatibility warning
 
@@ -99,12 +134,11 @@ Do **not** flash current ESP32 M-series firmware onto the original STM32 board.
 ### Still to record
 
 - clear exterior and underside photos;
-- powered LCD/menu photo;
-- boot-time K210 serial output;
+- exact LCD firmware text/photo;
+- built-in self-test results;
+- whether `/sd` passes and contains `try_demo.py`;
 - controller/AI board markings;
-- internal 3.3 V TTL connector location/pinout photo;
-- STM32 part marking if accessible;
-- installed SD-card contents and backup;
+- internal 3.3 V TTL connector location/pinout photo if later needed;
 - battery condition.
 
 ## Legacy robot arm
