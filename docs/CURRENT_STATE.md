@@ -4,87 +4,98 @@ Updated: 2026-09-03
 
 ## Status
 
-Original 2021 XGO-Mini hardware generation is now identified from period documentation. Windows USB discovery works, but the first direct XGO motion-protocol read on `COM3` returned no data. The most likely next task is to identify the K210 AI-module serial/console path rather than assume the STM32 motion firmware is dead.
+Original 2021 XGO-Mini hardware generation is identified as **K210 + STM32**. Windows USB discovery works on `COM3`. Direct XGO motion-protocol probing on COM3 produced no reply, but K210 serial probing produced a small amount of passive data, so the USB-UART path is alive and is most likely the K210 programming/console path rather than a transparent STM32 link.
 
 ## Confirmed
 
 - Target robot: original Kickstarter-era XGO-Mini owned by Tamás.
 - Repository: `tamaspota/xgo-ai-lab`.
 - Local checkout: `C:\projects\xgo-ai-lab`.
-- Period XGO-Mini K210 documentation identifies this generation as **K210 + STM32**.
-- Period hardware spec: 240x240 LCD, OV2640 camera, 16 GB SD card, 7.4 V 2500 mAh battery.
-- The AI module is Kendryte K210; the motion controller is STM32.
-- Windows identifies the connected USB interface as Silicon Labs CP210x/CP2102.
-- CP210x VCP driver is installed and working.
-- USB-UART interface is **COM3**.
+- RobotShop legacy product page matches this generation and specifies **K210 + STM32**, 240x240 LCD, OV2640 camera, 16 GB SD, MEMS microphone, three programmable keys and 7.4 V 2500 mAh battery.
+- K210 is the AI/high-level module; STM32 is the motion/core-drive controller.
+- Windows USB-UART interface: Silicon Labs CP210x/CP2102 on **COM3**.
 - VID:PID: **10C4:EA60**; serial `0001`; USB location `1-2`.
-- `scripts/xgo_read_firmware_raw.py COM3` sent the inspected XGO firmware read frame at 115200 baud and received **no response**.
-- The original 2021 XGO communication protocol documents the direct motion-controller interface as a **separate XH2.54 4-pin TTL UART**.
-- The protocol states that the 3.3 V motion-board UART is normally occupied by the AI module; for direct external control, that AI-module connection must be unplugged and the external host connected to the motion board.
-- Therefore `COM3` is not yet proven to be a direct STM32 motion-controller UART and the no-response result does not establish bad motion firmware.
-- Tamás explicitly approved replacing old firmware/software if useful, provided the image is for the verified hardware.
-- `scripts/k210_serial_probe.py` now exists for K210 serial/REPL identification without flashing.
+- Raw XGO firmware-read frame sent to COM3 at 115200 received **no response**.
+- `python scripts\k210_serial_probe.py COM3 --listen 5` received 6 bytes: `0d 0a 0d 0a 0d 0a` (three CR/LF pairs).
+- `python scripts\k210_serial_probe.py COM3 --listen 2 --repl` received no REPL response after Ctrl-C; no `>>>` prompt was detected.
+- Historical K210 application source shows the board runs a custom menu/application and SD-based user/demo execution, so lack of a plain REPL does not establish a broken K210.
+- Original 2021 XGO communication protocol documents the STM32 motion interface as a separate XH2.54 4-pin TTL UART at 115200 8N1, normally occupied by the AI module.
+- Tamás explicitly approved replacing old firmware/software when useful, provided the image matches the verified hardware generation.
+
+## Historical recovery material found
+
+A historical public XGO AI demo source tree was found at:
+
+- `geluu/XgoAI` (parent repository)
+- fork: `mynameiskristopher/k210-XgoAI`
+
+The English branch contains:
+
+- `xgo-ai-module-firmware-210722-en-2021-07-22-14-48-10.kfpkg`;
+- full SD-card style tree including `main.py`, `xgo.py`, demos, language and preset folders;
+- Blockly XML examples.
+
+This is a strong recovery lead, but it is **not yet verified as an official vendor repository**, so do not flash it blindly. Details and source-quality notes are in `docs/RECOVERY_SOURCES.md`.
 
 ## Important incompatibility
 
-Current XGO-Mini product generations/documentation describe an ESP32 motion board and publish current `M`-series ESP32 firmware. The original 2021 robot is documented as K210 + STM32.
+Current XGO-Mini product generations/documentation describe ESP32-based lower boards and publish current M-series firmware. The original 2021 robot is K210 + STM32.
 
-**Do not flash current ESP32 `M` firmware onto this original STM32 board.** A firmware prefix/model name match is insufficient because the MCU generation differs.
+**Do not flash current ESP32 M-series firmware onto this original STM32 board.**
 
 ## Current milestone
 
-### M1 — identify the two-controller paths
-
-Goal: separately identify:
-
-1. K210 AI-module USB/programming interface;
-2. STM32 motion-controller TTL interface.
+### M1 — recover the K210 side and identify STM32 access
 
 Completed:
 
 1. CP2102 driver and COM3 working.
 2. Direct XGO protocol read on COM3 tested; no response.
-3. Historical hardware architecture verified as K210 + STM32.
-4. Historical motion protocol verified to use a separate 4-pin TTL connector normally occupied by the AI module.
-5. K210 serial probe added.
+3. Original K210 + STM32 architecture verified.
+4. Historical STM32 TTL interface documented.
+5. K210 serial probe run: passive CR/LF bytes observed, no interactive REPL.
+6. Historical K210 firmware/SD recovery candidate located.
 
 ## Next actions
 
-First inspect the AI module rather than flash anything:
+### 1. Capture K210 boot serial
+
+Start a longer passive listener, then power-cycle the robot while it is listening:
 
 ```powershell
 cd C:\projects\xgo-ai-lab
 git pull
 .\.venv\Scripts\Activate.ps1
-python scripts\k210_serial_probe.py COM3 --listen 5
+python scripts\k210_serial_probe.py COM3 --listen 20
 ```
 
-If no serial output appears, run:
+Capture the complete output.
 
-```powershell
-python scripts\k210_serial_probe.py COM3 --listen 2 --repl
-```
+### 2. Photograph the powered LCD/menu
 
-Also power the robot normally and photograph the LCD/menu. The original manual shows a K210 application menu and 2021-era firmware information, so the screen is another useful identification path.
+The period K210 manual shows firmware information and a menu with entries such as DOG / Dog show / vision demos. A clear photo will identify how far the current K210 software boots.
 
-If K210 recovery is straightforward, replacing its old software is acceptable. Direct PC control of the STM32 motion board will likely require access to the internal 3.3 V TTL connector documented in the 2021 protocol.
+### 3. Inspect and back up the microSD card
+
+Before reflashing K210, remove/read the SD card if practical and copy its complete contents to a backup directory. Compare it with the historical `XgoAI` SD tree. Replacing missing/corrupt SD files may recover the stock application without touching flash.
 
 ## Blockers
 
-- Need result of K210 serial/REPL probe and/or a clear photo of the powered LCD/menu.
-- Exact physical routing of the CP2102 interface inside this unit remains unverified.
-- Exact original STM32 firmware image/tooling has not yet been identified.
+- Need boot-time serial capture and LCD state.
+- Installed SD-card contents are still unknown.
+- Exact physical routing of CP2102 inside this unit is still unverified.
+- Original STM32 firmware image/tooling remains unidentified.
 
 ## Do not do yet
 
-- do not flash current ESP32 XGO-Mini firmware onto the original STM32 board;
-- do not use an unverified STM32 firmware image;
-- do not assume COM3 is the STM32 protocol port;
-- do not instantiate current high-level `xgolib` merely to probe the hardware.
+- do not flash current ESP32 XGO-Mini firmware;
+- do not overwrite STM32 without an original-generation image;
+- do not assume lack of REPL means K210 failure;
+- do not mirror/flash the historical K210 `.kfpkg` until the board/recovery path is checked.
 
 ## Later scope
 
-- restore/replace K210 software or replace K210 as high-level compute;
+- restore or replace K210 software;
 - direct STM32 motion control from PC/Pi;
 - safe Python control API;
 - child-friendly controls;
