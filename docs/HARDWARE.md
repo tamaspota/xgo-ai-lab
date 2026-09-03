@@ -6,20 +6,23 @@ Updated: 2026-09-03
 
 Status: physically available and connected to the Windows PC for bring-up.
 
-### Period hardware specification
+### Verified period hardware specification
 
-Period XGO-Mini K210 documentation identifies this generation as:
+RobotShop's discontinued legacy XGO-Mini page (`RB-Xgo-01`, manufacturer `XGO-MINI`) and period documentation identify this generation as:
 
 - processor architecture: **Kendryte K210 + STM32**;
 - K210 role: AI/high-level module;
-- STM32 role: motion/core drive controller;
+- STM32 role: motion/core-drive controller;
 - display: 240 x 240 color LCD;
 - camera: OV2640, 0.3 MP;
 - storage: 16 GB SD card;
+- microphone: MEMS digital microphone;
+- keys: 3 programmable keys;
 - battery: 7.4 V 2500 mAh;
-- 12 DOF quadruped with serial bus servos.
+- 12 DOF quadruped with serial-bus servos;
+- micro-USB data cable included with the original product.
 
-This is materially different from current XGO-Mini generations whose driver-board documentation uses ESP32.
+This is materially different from current XGO-Mini generations whose lower-board documentation uses ESP32.
 
 ### 2026-09-03 Windows discovery
 
@@ -38,9 +41,9 @@ Connected USB interface after Silicon Labs VCP driver installation:
 - serial: `0001`;
 - USB location: `1-2`.
 
-### COM3 protocol test
+### COM3 test results
 
-The repository's raw XGO firmware-version read was sent to COM3 at 115200 baud:
+Raw XGO motion-controller firmware-read query at 115200:
 
 ```text
 55 00 09 02 07 0A E3 00 AA
@@ -48,39 +51,60 @@ The repository's raw XGO firmware-version read was sent to COM3 at 115200 baud:
 
 Result: **no response**.
 
-This result does not prove the motion controller or firmware is bad.
+K210 serial passive probe:
+
+```text
+passive RX bytes: 6
+hex: 0d 0a 0d 0a 0d 0a
+```
+
+Interpretation: three CR/LF pairs were received, so COM3 is not a completely dead serial path.
+
+K210 Ctrl-C / MicroPython REPL probe:
+
+- no bytes returned after Ctrl-C;
+- no `>>>` prompt detected.
+
+Historical K210 source shows a custom menu application running from flash/SD rather than requiring a plain REPL, so this result does not establish K210 failure.
 
 ### Historical direct motion-controller interface
 
-The original XGO-Mini Communication Protocol V1.0 (2021-08-05) specifies:
+XGO-Mini Communication Protocol V1.0 (2021-08-05) specifies:
 
 - standard TTL serial;
 - XH2.54 4-pin connection;
-- 115200 baud, 8 data bits, 1 stop bit, no parity;
-- two UART connectors on the core board, with 5 V and 3.3 V external supply options that must not be used simultaneously;
+- 115200 baud, 8N1;
 - the **3.3 V UART is occupied by the AI module by default**;
-- to use another external controller, the AI-module terminal must be unplugged and the external controller connected to the core board.
+- for direct external control, disconnect the AI-module terminal and connect the external host to the core board.
 
-Interpretation: the external CP2102/COM3 path is likely associated with the K210 AI-module programming/console interface rather than a transparent bridge to the STM32 motion-controller UART. Physical routing still needs verification.
+Interpretation: COM3 is likely the K210 AI-module USB/programming/console path, while the STM32 motion protocol is on an internal TTL path.
+
+### Historical K210 recovery package found
+
+A public historical `XgoAI` source tree contains a dated English K210 firmware package:
+
+`xgo-ai-module-firmware-210722-en-2021-07-22-14-48-10.kfpkg`
+
+and an SD application tree including `main.py`, `xgo.py`, demo and asset directories. This closely matches the legacy RobotShop/manual architecture, but the repository is not yet verified as an official vendor source. See `docs/RECOVERY_SOURCES.md`.
 
 ### Firmware compatibility warning
 
 Tamás approved firmware/software replacement if useful. However:
 
 - original robot: K210 + STM32;
-- current published XGO-Mini lower-board firmware documentation: ESP32-based generations.
+- current published lower-board XGO-Mini firmware may target ESP32-based hardware.
 
-Do **not** flash current ESP32 `M`-series firmware onto the original STM32 board. Only hardware-generation-specific images are acceptable.
+Do **not** flash current ESP32 M-series firmware onto the original STM32 board.
 
 ### Still to record
 
 - clear exterior and underside photos;
 - powered LCD/menu photo;
-- K210 serial/REPL behavior on COM3;
+- boot-time K210 serial output;
 - controller/AI board markings;
 - internal 3.3 V TTL connector location/pinout photo;
 - STM32 part marking if accessible;
-- installed SD-card contents;
+- installed SD-card contents and backup;
 - battery condition.
 
 ## Legacy robot arm
