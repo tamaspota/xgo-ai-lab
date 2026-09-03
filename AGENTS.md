@@ -2,7 +2,9 @@
 
 ## Purpose
 
-This repository is the shared implementation memory for the XGO AI Lab project.
+This repository is the shared implementation memory for the XGO AI Lab project and the handoff surface between ChatGPT, Codex, Grok, Copilot, Local GPU Helper and future coding agents.
+
+The repository must remain sufficient to continue the engineering work without relying on prior chat history.
 
 ## Mandatory reading order
 
@@ -11,13 +13,28 @@ Before changing code or documentation, read:
 1. `AGENTS.md`
 2. `docs/CURRENT_STATE.md`
 3. `docs/DECISIONS.md`
-4. `docs/RECOVERY_SOURCES.md` when working on firmware/recovery
-5. latest relevant `logs/session_YYYY-MM-DD.md`
-6. task-specific source files
+4. latest relevant `logs/session_YYYY-MM-DD.md`
+5. `docs/IDEAS.md` when planning future features/upgrades
+6. `docs/RECOVERY_SOURCES.md` when working on firmware/recovery
+7. task-specific source files
 
 ## Primary objective
 
-Bring an original Kickstarter-era XGO-Mini back into useful service safely, then expose it through a maintainable Python control layer. Later integration may include voice/vision AI, Local GPU Helper, and a separate legacy robot arm.
+Bring an original Kickstarter-era XGO-Mini back into useful service safely, then expose it through a maintainable Python control layer. Extend the existing platform where practical rather than replacing it by default. Later integration may include voice/vision AI, Local GPU Helper, child-friendly controls, upgraded sensing and a separate legacy robot arm.
+
+## Documentation model
+
+Keep different information classes separate:
+
+- `docs/CURRENT_STATE.md` — verified current status, blocker and next concrete action;
+- `docs/DECISIONS.md` — confirmed architectural/safety choices and their reasons;
+- `docs/IDEAS.md` — brainstorms, candidate upgrades and future experiments that are **not commitments**;
+- `docs/HARDWARE.md` — verified hardware facts, interfaces and measurements;
+- `docs/RECOVERY_SOURCES.md` — external firmware/software references with provenance and confidence;
+- `docs/FACTORY_SELF_TEST.md` — repeatable stock-hardware test procedure;
+- `logs/session_YYYY-MM-DD.md` — dated engineering history, commands, observations, modified files and unfinished work.
+
+When Tamás supplies a useful service, repository, manual, firmware source or hardware detail, put it in the appropriate repository document if it materially affects the project. Do not promote casual brainstorming into a decision or active task; capture it in `docs/IDEAS.md` instead.
 
 ## Safety rules
 
@@ -36,12 +53,15 @@ Bring an original Kickstarter-era XGO-Mini back into useful service safely, then
 - Prefer simple Python and pyserial-compatible tooling.
 - Keep platform-specific code isolated.
 - Do not add cloud dependencies for basic robot control.
+- Prefer existing hardware and compute before recommending another robotics platform.
 - Keep the XGO and legacy robot arm as separate devices until both are independently stable.
 - Record verified hardware facts in `docs/HARDWARE.md`.
 - Record architectural or safety decisions in `docs/DECISIONS.md`.
+- Record uncommitted feature/upgrade concepts in `docs/IDEAS.md`.
 - Record external recovery references and provenance in `docs/RECOVERY_SOURCES.md`.
 - Update `docs/CURRENT_STATE.md` after material progress.
 - Append a dated session log for each meaningful hardware/software session.
+- Keep unfinished/blocked work explicit; do not imply tests passed unless evidence was observed.
 
 ## Hardware generation
 
