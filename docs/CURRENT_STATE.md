@@ -4,26 +4,31 @@ Updated: 2026-09-03
 
 ## Status
 
-Repository initialized. Passive hardware bring-up is in progress.
+Repository initialized. Safe hardware bring-up is in progress and the Windows serial path is now identified.
 
 ## Confirmed
 
 - Target robot: original Kickstarter-era XGO-Mini owned by Tamás.
 - Repository: `tamaspota/xgo-ai-lab`.
+- Local checkout: `C:\projects\xgo-ai-lab`.
 - Current upstream `LuwuDynamics/xgo_doglib` supports `xgomini` and defaults to 115200 baud.
-- Current upstream `XGO_DOG` initialization calls `reset()`, so it is unsuitable for the first passive diagnostic step.
-- Windows sees the robot-side USB interface as **CP2102 USB to UART Bridge Controller** under `Other devices`.
-- No new COM port appears yet because the CP210x VCP driver is not installed/loaded on this Windows installation.
-- Baseline serial enumeration without a working XGO driver currently shows only legacy `COM1`.
+- Current upstream `XGO_DOG` initialization calls `reset()`, so it remains unsuitable for initial hardware probing.
+- Windows identifies the robot-side USB interface as Silicon Labs CP210x/CP2102.
+- Official CP210x VCP driver is installed and working.
+- XGO USB-UART interface is now **COM3**.
+- VID:PID: **10C4:EA60**.
+- serial: `0001`.
+- USB location: `1-2`.
+- Baseline legacy serial port remains `COM1`.
+- A dedicated raw firmware READ probe now exists at `scripts/xgo_read_firmware_raw.py`.
 
 ## Unverified
 
 - Exact board/controller revision.
 - Exact firmware version.
-- COM port that will be assigned after CP210x VCP driver installation.
-- USB VID/PID and hardware ID after proper driver enumeration.
+- Whether the original 2021-era controller replies to the current upstream firmware-read request.
 - Battery condition.
-- Compatibility of the 2021-era firmware with the current upstream library.
+- Full compatibility of the 2021-era firmware with the current upstream library.
 
 ## Current milestone
 
@@ -36,18 +41,24 @@ Completed:
 1. Passive serial baseline collected: only `COM1`.
 2. XGO connected to Windows PC.
 3. Device Manager identified the USB-UART bridge as CP2102.
+4. Silicon Labs CP210x VCP driver installed.
+5. XGO serial interface enumerated as `COM3` with VID:PID `10C4:EA60`.
+6. Inspected upstream read protocol and created a local firmware-only raw probe without importing `xgolib`.
 
-Next actions:
+Next action:
 
-1. Install the official Silicon Labs **CP210x USB to UART Bridge VCP driver** for Windows.
-2. Reconnect the XGO if needed.
-3. Run `python scripts/list_serial_ports.py` again.
-4. Record the newly assigned COM port and USB details.
-5. Design a read-only protocol/firmware probe that does not instantiate the current high-level XGO library.
+```powershell
+cd C:\projects\xgo-ai-lab
+git pull
+.\.venv\Scripts\Activate.ps1
+python scripts\xgo_read_firmware_raw.py COM3
+```
 
-## Blockers
+Record the complete output. If no reply is received, check robot/controller power and hardware details before trying any other protocol command.
 
-Windows CP210x VCP driver is currently missing/not loaded.
+## Current blocker
+
+Need the result of the first firmware-version READ request on `COM3`.
 
 ## Do not do yet
 
