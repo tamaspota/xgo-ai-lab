@@ -4,13 +4,16 @@ Updated: 2026-09-03
 
 ## Status
 
-Original 2021 XGO-Mini hardware generation is identified as **K210 + STM32**. Windows USB discovery works on `COM3`. Direct XGO motion-protocol probing on COM3 produced no reply. K210 serial probing produced a few CR/LF bytes once, but no interactive REPL. The powered robot reportedly displays a firmware/version string approximately matching **`xgo-210722`**, which closely matches a historical 2021 K210 firmware package found in the period XgoAI source tree.
+Original 2021 XGO-Mini hardware generation is identified as **K210 + STM32**. Windows USB discovery works on `COM3`. Direct XGO motion-protocol probing on COM3 produced no reply. K210 serial probing produced a few CR/LF bytes once, but no interactive REPL. The robot reportedly displays firmware/version text approximately matching **`xgo-210722`**, which closely matches a historical 2021 K210 firmware package found in the period XgoAI source tree.
+
+The robot battery is currently fully discharged, so hardware testing is paused until it is charged. No failure is inferred from the inability to continue testing while discharged.
 
 ## Confirmed
 
 - Target robot: original Kickstarter-era XGO-Mini owned by Tamás.
 - Repository: `tamaspota/xgo-ai-lab`.
 - Local checkout: `C:\projects\xgo-ai-lab`.
+- This repository is the intended shared engineering memory for implementation, experiments, documentation, ideas and multi-agent handoff.
 - RobotShop legacy product data matches this generation and specifies **K210 + STM32**, 240x240 LCD, OV2640 camera, 16 GB SD, MEMS microphone, three programmable keys and 7.4 V 2500 mAh battery.
 - K210 is the AI/high-level module; STM32 is the motion/core-drive controller.
 - Windows USB-UART interface: Silicon Labs CP210x/CP2102 on **COM3**.
@@ -22,6 +25,7 @@ Original 2021 XGO-Mini hardware generation is identified as **K210 + STM32**. Wi
 - Historical K210 application source shows the board runs a custom menu/application and SD-based user/demo execution, so lack of a plain REPL does not establish a broken K210.
 - Original 2021 XGO communication protocol documents the STM32 motion interface as a separate XH2.54 4-pin TTL UART at 115200 8N1, normally occupied by the AI module.
 - Tamás explicitly approved replacing old firmware/software when useful, provided the image matches the verified hardware generation.
+- Current physical blocker: robot battery is discharged and must be charged before the built-in self-test or further motion-side work.
 
 ## Strong historical version match
 
@@ -31,7 +35,7 @@ A historical public XGO AI demo source tree contains:
 
 `xgo-ai-module-firmware-210722-en-2021-07-22-14-48-10.kfpkg`
 
-The date/version match is strong evidence that the installed K210 software is from the same 2021 software family. This is not yet treated as proof that the installed binary is byte-identical to that package.
+The date/version match is strong evidence that the installed K210 software is from the same 2021 software family. This is not proof that the installed binary is byte-identical to that package.
 
 The same source tree includes the expected SD application files (`main.py`, `xgo.py`, `device_test.py`, `try_demo.py`, demos/assets).
 
@@ -49,7 +53,7 @@ That self-test checks:
 6. A/B/C buttons
 7. LEDs
 
-The SD test mounts `/sd`, lists its files, and requires `try_demo.py` to be present. Therefore the next check can determine whether an SD card is installed and usable **without opening the robot first**.
+The SD test mounts `/sd`, lists its files, and requires `try_demo.py` to be present. Therefore the test can determine whether an SD card is installed and usable without opening the robot first.
 
 Detailed procedure: `docs/FACTORY_SELF_TEST.md`.
 
@@ -94,7 +98,9 @@ Completed:
 
 ## Next action
 
-Run the built-in historical factory test before any flash operation:
+**Deferred until battery is charged.**
+
+After charging, run the built-in historical factory test before any flash operation:
 
 1. close any program holding `COM3`;
 2. power robot off;
@@ -109,23 +115,33 @@ If the SD stage says `OK`, then an SD card is installed/mounted and contains the
 
 ## Decision path after self-test
 
-- **All/most tests OK:** keep current K210 firmware; move to uploading/running a minimal user program and exercising the historical K210 `xgo.py` -> STM32 path.
+- **All/most tests OK:** keep current K210 firmware; establish a minimal user-code upload/run workflow and exercise the historical K210 `xgo.py` -> STM32 path.
 - **SD fails, K210 peripherals work:** repair/rebuild SD contents first; do not flash K210 yet.
 - **Broad K210 failure:** evaluate the matched 2021 `.kfpkg` recovery path.
 
+## Legacy robot arm
+
+A university-era robot arm is available and is intended as a future second device in this repository. It is not yet technically identified. When photos, controller details, original code or documentation are supplied, add them to the hardware/source records and bring the arm up independently before coordinated XGO + arm work.
+
+## Future upgrade direction
+
+Candidate modernization ideas (better camera, off-board compute, Local GPU Helper, child-friendly controls, robot-arm coordination and other software/sensor upgrades) are tracked separately in `docs/IDEAS.md`. They are not current commitments and should be promoted only when a concrete limitation/use case is verified.
+
 ## Blockers
 
-- Need built-in self-test result and a clear LCD photo/transcription.
-- Installed SD-card state is still unknown until self-test.
+- XGO battery is discharged; charge required before self-test.
+- Installed SD-card state remains unknown until self-test/inspection.
 - Exact physical routing of CP2102 inside this unit remains unverified.
 - Original STM32 firmware image/tooling remains unidentified, but STM32 reflashing is not currently required.
+- Legacy robot arm technical details are not yet supplied.
 
 ## Do not do yet
 
 - do not flash current ESP32 XGO-Mini firmware;
 - do not overwrite STM32 without an original-generation image;
 - do not assume lack of REPL means K210 failure;
-- do not flash the historical K210 `.kfpkg` before running the built-in self-test.
+- do not flash the historical K210 `.kfpkg` before running the built-in self-test;
+- do not buy/replace the robotics platform merely because newer models exist; first identify what the existing hardware cannot do.
 
 ## Later scope
 
@@ -135,6 +151,7 @@ If the SD stage says `OK`, then an SD card is installed/mounted and contains the
 - optionally replace K210 with PC/Pi as high-level compute later;
 - safe Python control API;
 - child-friendly controls;
+- upgraded camera/sensing when justified;
 - voice/vision AI via PC or Local GPU Helper;
 - separate legacy robot-arm station;
 - coordinated multi-robot tasks.
