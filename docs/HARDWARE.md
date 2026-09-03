@@ -4,7 +4,7 @@ Updated: 2026-09-03
 
 ## XGO-Mini
 
-Status: physically available, detailed inspection pending.
+Status: physically available and connected to the Windows PC for first passive discovery.
 
 Known from project context:
 
@@ -13,14 +13,35 @@ Known from project context:
 - later host/gateway may be PC or Raspberry Pi-class hardware;
 - AI compute does not need to run on the original XGO AI board.
 
-Still to record after physical connection:
+### 2026-09-03 Windows discovery
+
+Baseline with XGO disconnected:
+
+- `COM1` — `Communications Port (COM1)`;
+- HWID: `ACPI\\PNP0501\\0`;
+- no USB VID/PID reported.
+
+After connecting the XGO:
+
+- no new COM port appeared yet;
+- Windows Device Manager did detect a new device under `Other devices`;
+- detected name: **CP2102 USB to UART Bridge Controller**;
+- the device shows a warning icon, consistent with the VCP driver not being installed/loaded.
+
+Interpretation: the physical USB connection is working far enough for Windows to enumerate the CP2102 USB-UART bridge. The current blocker is the Windows CP210x VCP driver, not an absent USB device.
+
+Next hardware check after driver installation:
+
+- confirm device moves from `Other devices` to `Ports (COM & LPT)`;
+- record assigned COM port;
+- record VID/PID and hardware ID from Device Manager or `list_serial_ports.py`;
+- do not send protocol or motion commands yet.
+
+Still to record later:
 
 - exterior/label photos;
 - controller/AI board markings;
-- connector used to attach to PC;
-- Windows Device Manager name;
-- USB VID/PID if available;
-- COM port;
+- exact connector used to attach to PC;
 - firmware identity/version;
 - battery condition;
 - any installed SD card/software image.
