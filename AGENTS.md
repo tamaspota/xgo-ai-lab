@@ -11,8 +11,9 @@ Before changing code or documentation, read:
 1. `AGENTS.md`
 2. `docs/CURRENT_STATE.md`
 3. `docs/DECISIONS.md`
-4. latest relevant `logs/session_YYYY-MM-DD.md`
-5. task-specific source files
+4. `docs/RECOVERY_SOURCES.md` when working on firmware/recovery
+5. latest relevant `logs/session_YYYY-MM-DD.md`
+6. task-specific source files
 
 ## Primary objective
 
@@ -21,7 +22,9 @@ Bring an original Kickstarter-era XGO-Mini back into useful service safely, then
 ## Safety rules
 
 - Fail closed when hardware identity, protocol semantics or stop behavior are uncertain.
-- Do not flash firmware unless Tamás explicitly approves it.
+- Tamás has approved replacing old software/firmware, but only use images verified for the actual controller generation.
+- Never flash current ESP32 XGO-Mini lower-board firmware onto the original STM32 board.
+- Back up readable SD content before intentionally reflashing the K210.
 - Do not send motion commands during passive discovery.
 - Do not assume current upstream libraries are behaviorally safe for old hardware.
 - Inspect upstream source before using constructors or helpers that may command movement.
@@ -36,24 +39,41 @@ Bring an original Kickstarter-era XGO-Mini back into useful service safely, then
 - Keep the XGO and legacy robot arm as separate devices until both are independently stable.
 - Record verified hardware facts in `docs/HARDWARE.md`.
 - Record architectural or safety decisions in `docs/DECISIONS.md`.
+- Record external recovery references and provenance in `docs/RECOVERY_SOURCES.md`.
 - Update `docs/CURRENT_STATE.md` after material progress.
 - Append a dated session log for each meaningful hardware/software session.
 
-## Current upstream reference
+## Hardware generation
 
-Official current control library reviewed on 2026-09-03:
+Current verified working model for this robot:
 
-- repository: `LuwuDynamics/xgo_doglib`
-- reviewed commit: `cf72514273dc703284d3c47e46c67ce238caae11`
-- current package factory defaults to 115200 baud and supports `xgomini`
-- current `XGO_DOG` initialization invokes `reset()`, so it must not be used for the initial passive discovery step
+- original 2021 XGO-Mini;
+- high-level/AI board: Kendryte K210;
+- motion controller: STM32;
+- Windows-visible CP2102 interface: COM3, treated as K210-side until proven otherwise;
+- direct STM32 motion protocol: internal 3.3 V TTL/UART path documented by the original protocol.
 
-## Completion criteria for first milestone
+## Software references
 
-Milestone 1 is complete only when:
+Current official control library reviewed on 2026-09-03:
+
+- `LuwuDynamics/xgo_doglib`, commit `cf72514273dc703284d3c47e46c67ce238caae11`;
+- current package defaults to 115200 and supports logical `xgomini`;
+- current `XGO_DOG` initialization invokes `reset()`, so do not use it merely for hardware identification.
+
+Historical recovery candidate:
+
+- `geluu/XgoAI` plus preserved forks;
+- contains a dated 2021 K210 `.kfpkg` and SD application tree;
+- useful evidence, but not yet verified as an official vendor firmware source.
+
+## Completion criteria for first recovery milestone
+
+Milestone 1 is complete when:
 
 - Windows COM/device identity is recorded;
-- connection method is understood;
-- exact or best-supported XGO hardware/firmware identity is recorded;
-- a read-only or otherwise non-motion communication path is proven;
-- no firmware update was needed.
+- K210 USB/programming path behavior is understood;
+- installed SD state is inspected/backed up or deliberately declared unrecoverable;
+- a known-good K210 execution path is established (existing software, restored SD, or verified reflash);
+- STM32 motion-controller access path is identified without cross-generation flashing;
+- the next motion test has an explicit stop/recovery path.
