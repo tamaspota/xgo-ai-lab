@@ -1,10 +1,24 @@
 # DECISIONS
 
-## 2026-09-03 — repository scope
+## 2026-09-03 — repository scope and project-memory role
 
-**Decision:** Use one repository, `xgo-ai-lab`, as the shared implementation memory for XGO bring-up, later AI integration, and eventual coordination with the legacy robot arm.
+**Decision:** Use one repository, `xgo-ai-lab`, as the shared implementation memory for XGO bring-up, later AI integration, future sensor/software upgrades, and eventual coordination with the legacy robot arm.
 
-**Reason:** Avoid fragmented chat-only knowledge and allow multiple coding agents/tools to work from the same current state.
+The repository is the primary handoff surface between ChatGPT, Codex, Grok, Copilot, Local GPU Helper and future coding agents. Relevant implementation state, experiments, hardware facts, sources, ideas, decisions and dated progress must be captured in the repository rather than left only in chat history.
+
+**Reason:** Avoid fragmented chat-only knowledge and allow another tool/agent to continue from repository state alone.
+
+## 2026-09-03 — ideas are documented separately from commitments
+
+**Decision:** Keep speculative upgrades and brainstorms in `docs/IDEAS.md`. Do not silently promote them to current work or architectural decisions.
+
+**Reason:** The project will accumulate camera, AI, child-interface, robot-arm and hardware-upgrade concepts. Separating ideas from current state prevents overparallelization while preserving useful thoughts.
+
+## 2026-09-03 — extend existing hardware before replacing the platform
+
+**Decision:** For modernization work, first evaluate whether the existing XGO mechanics/motion controller plus better software, sensing or off-board compute can meet the use case. A newer robot platform is not the default solution.
+
+**Reason:** The existing XGO provides a working quadruped mechanical platform and documented motion interface. Compute, camera and interaction limitations can often be addressed independently. This is an engineering preference, not a permanent ban on replacement if a verified mechanical limitation requires it.
 
 ## 2026-09-03 — firmware rewrite is allowed, but only for verified hardware
 
