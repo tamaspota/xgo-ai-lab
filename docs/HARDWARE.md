@@ -1,10 +1,10 @@
 # HARDWARE
 
-Updated: 2026-09-03
+Updated: 2026-09-04
 
 ## XGO-Mini — original Kickstarter/K210 generation
 
-Status: physically available and connected to the Windows PC for bring-up.
+Status: physically available and connected to the Windows PC for bring-up. Current blocker is the battery/power path.
 
 ### Verified period hardware specification
 
@@ -18,11 +18,30 @@ RobotShop's discontinued legacy XGO-Mini page (`RB-Xgo-01`, manufacturer `XGO-MI
 - storage: 16 GB SD card;
 - microphone: MEMS digital microphone;
 - keys: 3 programmable keys;
-- battery: 7.4 V 2500 mAh;
+- battery: **7.4 V 2500 mAh**;
 - 12 DOF quadruped with serial-bus servos;
 - micro-USB data cable included with the original product.
 
 This is materially different from current XGO-Mini generations whose lower-board documentation uses ESP32.
+
+### Battery / power-path observation — 2026-09-04
+
+Tamás reports:
+
+- robot was left charging for approximately two hours;
+- normal startup from the power button still does not work;
+- USB has previously powered at least the USB/K210-side electronics sufficiently for Windows enumeration and serial probing.
+
+Interpretation: a failed or deeply discharged battery is the leading hypothesis, but this is not yet confirmed. Other plausible causes are battery-protection state, loose/disconnected battery connector, charge-path fault or power-switch/power-path fault.
+
+Next check:
+
+- unplug USB;
+- inspect pack for swelling, damage, abnormal heat or odor;
+- if safely accessible, measure pack voltage at the battery connector;
+- inspect connector and charge indication behavior.
+
+Do not attempt protection bypass, forced charging or cell-level revival of an aged lithium pack.
 
 ### Installed firmware indication
 
@@ -88,17 +107,7 @@ Historical K210 source shows a custom menu application, so no plain REPL is expe
 
 The period `sd/main.py` can enter test mode by holding the **left/A button during boot** while the right/B button is not held. It executes `/sd/device_test.py`.
 
-The historical self-test checks:
-
-- LCD;
-- camera;
-- microphone;
-- SD card;
-- speaker;
-- A/B/C buttons;
-- LEDs.
-
-The SD stage lists `/sd` and requires `try_demo.py` to exist. This is the preferred next method to determine whether the advertised 16 GB SD card is physically present, mounted and populated, without opening the robot first.
+The historical self-test checks LCD, camera, microphone, SD card, speaker, A/B/C buttons and LEDs. The SD stage lists `/sd` and requires `try_demo.py` to exist.
 
 See `docs/FACTORY_SELF_TEST.md`.
 
@@ -133,13 +142,15 @@ Do **not** flash current ESP32 M-series firmware onto the original STM32 board.
 
 ### Still to record
 
+- battery physical condition;
+- battery-pack voltage;
+- connector and charge-path state;
 - clear exterior and underside photos;
 - exact LCD firmware text/photo;
-- built-in self-test results;
+- built-in self-test results after stable power is restored;
 - whether `/sd` passes and contains `try_demo.py`;
 - controller/AI board markings;
-- internal 3.3 V TTL connector location/pinout photo if later needed;
-- battery condition.
+- internal 3.3 V TTL connector location/pinout photo if later needed.
 
 ## Legacy robot arm
 
