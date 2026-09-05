@@ -1,138 +1,111 @@
 # CURRENT_STATE
 
-Updated: 2026-09-04
+Updated: 2026-09-05
 
 ## Status
 
-Original 2021 XGO-Mini hardware generation is identified as **K210 + STM32**. Windows USB discovery works on `COM3`. Direct XGO motion-protocol probing on COM3 produced no reply. K210 serial probing produced a few CR/LF bytes once, but no interactive REPL. The robot reportedly displays firmware/version text approximately matching **`xgo-210722`**, which closely matches a historical 2021 K210 firmware package found in the period XgoAI source tree.
+Original 2021 XGO-Mini hardware generation is identified as **K210 + STM32**. The current blocker is the **battery / power path**, not firmware. The robot was opened and found to use two removable 18650-format cells in an internal holder. The original cells are now being tested separately in an XTAR VC2 charger and their actual voltages still need measurement.
 
-The current physical blocker is now the **battery / power path**. After approximately two hours of charging, the robot still does not start from its normal power button, while USB has been able to power at least the USB/K210-side electronics. A failed or deeply discharged battery is the leading hypothesis, but this is not yet confirmed.
+The lower/controller board is now physically exposed. Its silkscreen includes `XGO MINI V2.5` according to Tamás, plus a 2021-era code/date marking. Visible service features include lower-board micro-USB, a `SWITCH` harness connector, a `G CLK DIO 3V3` 4-pin header, and DOWNLOAD/CALIBRATE mode switches.
 
 ## Confirmed
 
-- Target robot: original Kickstarter-era XGO-Mini owned by Tamás.
-- Repository: `tamaspota/xgo-ai-lab`.
-- Local checkout: `C:\projects\xgo-ai-lab`.
-- This repository is the intended shared engineering memory for implementation, experiments, documentation, ideas and multi-agent handoff.
-- RobotShop legacy product data matches this generation and specifies **K210 + STM32**, 240x240 LCD, OV2640 camera, 16 GB SD, MEMS microphone, three programmable keys and 7.4 V 2500 mAh battery.
-- K210 is the AI/high-level module; STM32 is the motion/core-drive controller.
-- Windows USB-UART interface: Silicon Labs CP210x/CP2102 on **COM3**.
-- VID:PID: **10C4:EA60**; serial `0001`; USB location `1-2`.
-- Raw XGO firmware-read frame sent to COM3 at 115200 received **no response**.
-- `python scripts\k210_serial_probe.py COM3 --listen 5` received 6 bytes: `0d 0a 0d 0a 0d 0a`.
-- `python scripts\k210_serial_probe.py COM3 --listen 2 --repl` received no REPL response; no `>>>` prompt was detected.
-- `python scripts\k210_serial_probe.py COM3 --listen 20` later received no bytes.
-- Historical K210 application source shows the board runs a custom menu/application and SD-based user/demo execution, so lack of a plain REPL does not establish a broken K210.
-- Original 2021 XGO communication protocol documents the STM32 motion interface as a separate XH2.54 4-pin TTL UART at 115200 8N1, normally occupied by the AI module.
-- Tamás explicitly approved replacing old firmware/software when useful, provided the image matches the verified hardware generation.
-- After approximately two hours on charge, normal battery-powered startup still fails.
-- USB power has been sufficient for previous PC-side enumeration/communication.
+- target robot: original Kickstarter-era XGO-Mini;
+- repository: `tamaspota/xgo-ai-lab`;
+- local checkout: `C:\projects\xgo-ai-lab`;
+- period hardware architecture: K210 high-level/AI module + STM32 motion controller;
+- period battery specification: 7.4 V 2500 mAh;
+- actual battery implementation observed: two removable 18650-format cells in a chassis holder;
+- normal battery-powered boot currently fails after charging attempt;
+- USB enumeration previously works through Silicon Labs CP210x/CP2102 on COM3, VID:PID `10C4:EA60`;
+- installed K210 firmware text approximately matches `xgo-210722`, closely matching a historical July 22, 2021 recovery package;
+- historical K210 app/self-test path and original STM32 TTL protocol have been located;
+- current ESP32-generation XGO firmware must not be flashed to this original STM32 generation.
 
-## Strong historical version match
+## New lower-board findings
 
-Tamás reports that the robot display shows firmware text approximately `xgo-210722`.
+Visible/service interfaces from the opened robot:
 
-A historical public XGO AI demo source tree contains:
+- micro-USB on the lower board;
+- `SWITCH` 4-pin connector;
+- `G CLK DIO 3V3` 4-pin header (P2);
+- two board switches identified from silkscreen as DOWNLOAD and CALIBRATE;
+- additional internal 4-pin connectors still unmapped.
 
-`xgo-ai-module-firmware-210722-en-2021-07-22-14-48-10.kfpkg`
+`G CLK DIO 3V3` is strongly consistent with STM32 SWD (GND/SWCLK/SWDIO/3.3 V reference), but this is not yet electrically verified.
 
-The date/version match is strong evidence that the installed K210 software is from the same 2021 software family. This is not proof that the installed binary is byte-identical to that package.
-
-The same source tree includes the expected SD application files (`main.py`, `xgo.py`, `device_test.py`, `try_demo.py`, demos/assets).
-
-## Built-in factory/self-test path found
-
-Historical `sd/main.py` contains a startup test mode: hold the **left/A button** during boot while the right/B button is not held. It executes `/sd/device_test.py`.
-
-That self-test checks LCD, camera, microphone, SD card, speaker, A/B/C buttons and LEDs. The SD test mounts `/sd`, lists its files, and requires `try_demo.py` to be present.
-
-Detailed procedure: `docs/FACTORY_SELF_TEST.md`.
-
-## Historical recovery material found
-
-Historical parent repository: `geluu/XgoAI`.
-
-Useful fork: `mynameiskristopher/k210-XgoAI`.
-
-English branch contains the dated K210 `.kfpkg`, full SD-card style tree and Blockly XML examples. This is a strong recovery lead, but not yet verified as an official current vendor repository. Source-quality notes are in `docs/RECOVERY_SOURCES.md`.
-
-## Important incompatibility
-
-Current XGO-Mini product generations/documentation describe ESP32-based lower boards and publish current M-series firmware. The original 2021 robot is K210 + STM32.
-
-**Do not flash current ESP32 M-series firmware onto this original STM32 board.**
+The exposed lower-board USB and service controls mean the previous working assumption that COM3 is necessarily the K210-side interface is now uncertain. It may be a lower-board service/programming interface. This must be mapped physically after stable power is restored.
 
 ## Current milestone
 
-### M1 — restore stable power, then verify original K210 stack and reach STM32 motion control
+### M1 — restore stable power and map the original controller interfaces
 
 Completed:
 
-1. CP2102 driver and COM3 working.
-2. Direct XGO protocol read on COM3 tested; no response.
-3. Original K210 + STM32 architecture verified.
-4. Historical STM32 TTL interface documented.
-5. K210 serial probe run: intermittent passive CR/LF bytes, no interactive REPL.
-6. Historical K210 firmware/SD recovery candidate located.
-7. Reported installed firmware string strongly matches the historical `210722` K210 package.
-8. Historical built-in hardware/self-test path identified.
-9. Battery-powered startup failure identified as the current hardware blocker.
+1. CP2102 driver/COM3 working.
+2. Historical K210 + STM32 architecture verified.
+3. Historical STM32 TTL protocol documented.
+4. Historical K210 recovery material and factory self-test found.
+5. Battery-powered startup failure identified.
+6. Battery compartment opened: two removable 18650 cells confirmed.
+7. Lower/controller board service connectors and switches exposed.
+8. Likely STM32 SWD header identified from silkscreen.
 
 ## Next action
 
-Before any firmware work, diagnose the battery/power path:
+Do **not** replace the controller board or flash firmware yet.
 
-1. disconnect USB;
-2. visually inspect the battery for swelling, damage, heat or odor;
-3. if safely accessible, measure the battery-pack voltage at its connector with a multimeter;
-4. inspect the battery connector and charge-path behavior;
-5. record measured voltage and physical condition.
+First complete power diagnosis:
 
-The period battery specification is **7.4 V 2500 mAh**, i.e. a nominal 2S lithium pack. Do not attempt cell-level revival or protection bypass on an aged/deeply discharged pack.
+1. measure each original 18650 cell directly with a multimeter;
+2. if either cell is severely low or not accepted by a normal charger, retire that cell rather than force-charge it;
+3. use two known-good matched 18650 cells at similar state of charge for the next test;
+4. measure holder/output voltage before connecting/booting;
+5. attempt normal power-on and observe voltage sag.
 
-After stable battery/power operation is restored, run the built-in factory/self-test before any flash operation.
+Only after stable power is restored:
 
-## Decision path after power diagnosis
+1. run the built-in factory/self-test;
+2. map which USB connector produces COM3;
+3. verify the `G CLK DIO 3V3` header electrically as SWD;
+4. identify the internal UART between high-level controller and STM32;
+5. then decide whether to keep or replace the K210/display layer.
 
-- **Battery clearly failed / abnormal:** replace with a verified compatible pack before further robot tests.
-- **Battery voltage plausible but robot still will not start:** inspect connector, charge path, power switch and power distribution.
-- **Normal startup restored:** run factory self-test, then determine SD/K210 state.
+## Architecture direction under consideration
 
-## Legacy robot arm
+No replacement decision has been made. The preferred modernization path, if the original STM32 motion board is healthy, is likely:
 
-A university-era robot arm is available and is intended as a future second device in this repository. It is not yet technically identified. When photos, controller details, original code or documentation are supplied, add them to the hardware/source records and bring the arm up independently before coordinated XGO + arm work.
+- keep chassis, 12 servos and original STM32 motion board;
+- replace or bypass only the old K210 high-level layer if it becomes limiting;
+- use a modern SBC/PC as the AI/vision/controller layer;
+- attach a new display/camera to that high-level controller if useful.
 
-## Future upgrade direction
-
-Candidate modernization ideas (better camera, off-board compute, Local GPU Helper, child-friendly controls, robot-arm coordination and other software/sensor upgrades) are tracked separately in `docs/IDEAS.md`. They are not current commitments and should be promoted only when a concrete limitation/use case is verified.
+This minimizes mechanical/electrical rework and preserves the robot-specific gait/servo controller. Full lower-board replacement should be considered only if the original motion board is actually faulty or its servo bus proves unusable.
 
 ## Blockers
 
-- Normal battery-powered boot fails after approximately two hours of charging.
-- Battery condition and pack voltage are unknown.
-- Installed SD-card state remains unknown until power/self-test/inspection.
-- Exact physical routing of CP2102 inside this unit remains unverified.
-- Original STM32 firmware image/tooling remains unidentified, but STM32 reflashing is not currently required.
-- Legacy robot arm technical details are not yet supplied.
+- original 18650 cell voltages unknown;
+- stable battery-powered boot not yet restored;
+- exact lower-board model/silkscreen code not fully recorded;
+- internal connector pinouts still unmapped;
+- COM3 physical routing uncertain;
+- self-test/SD state still unknown.
 
 ## Do not do yet
 
+- do not force-charge deeply discharged Li-ion cells;
+- do not use mismatched cells as a permanent pack;
+- do not toggle CALIBRATE casually: calibration can alter servo reference data;
 - do not flash current ESP32 XGO-Mini firmware;
-- do not overwrite STM32 without an original-generation image;
-- do not assume lack of REPL means K210 failure;
-- do not flash the historical K210 `.kfpkg` while power is unstable;
-- do not attempt to revive an aged lithium pack by bypassing protection or forcing charge;
-- do not buy/replace the robotics platform merely because newer models exist; first identify what the existing hardware cannot do.
+- do not replace the STM32 board merely because the K210/display layer is old;
+- do not assume COM3 interface ownership until physically verified.
 
 ## Later scope
 
-- retain or recover original K210 software;
-- establish user-code upload/run workflow;
-- exercise K210 -> STM32 motion commands;
-- optionally replace K210 with PC/Pi as high-level compute later;
 - safe Python control API;
+- replacement/bypass of K210 with Raspberry Pi/PC-class controller if justified;
+- modern camera/display;
 - child-friendly controls;
-- upgraded camera/sensing when justified;
 - voice/vision AI via PC or Local GPU Helper;
 - separate legacy robot-arm station;
 - coordinated multi-robot tasks.
