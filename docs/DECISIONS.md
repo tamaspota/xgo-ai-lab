@@ -52,16 +52,31 @@ The repository is the primary handoff surface between ChatGPT, Codex, Grok, Copi
 
 **Reason:** Initialization could command movement. Hardware-path identification should precede motion tests.
 
-## 2026-09-03 — COM3 is treated as K210-side until proven otherwise
+## 2026-09-03 — COM3 treated as K210-side (superseded 2026-09-05)
 
-**Decision:** Treat `COM3` as the K210/AI-module USB-UART path, not as a verified direct STM32 motion-controller UART.
+**Decision at the time:** Treat `COM3` as the K210/AI-module USB-UART path, not as a verified direct STM32 motion-controller UART.
 
-**Evidence:**
+This decision is now **superseded** by the 2026-09-05 interface-mapping decision below because opening the robot exposed lower-board micro-USB and service connectors that make COM3 ownership uncertain.
 
-- original protocol documents the STM32 motion interface as a separate 4-pin TTL connection normally occupied by the AI module;
-- raw XGO firmware-read packet on COM3 produced no response;
-- K210 serial probe on COM3 observed three CR/LF pairs;
-- Ctrl-C did not expose an interactive REPL, which is compatible with the historical custom K210 menu application.
+## 2026-09-05 — power-path diagnosis precedes board/firmware replacement
+
+**Decision:** Do not remove/replace the STM32 lower board or flash firmware while the battery/power path is still unmeasured.
+
+**Evidence:** Both original 18650 cells measure approximately 3.74 V and 3.70 V open circuit, but the robot still does not start. A matching RobotShop support case was resolved by battery replacement, and the original product specifies 18650 cells with 3C discharge capability.
+
+**Practical consequence:** map the holder pack rails, measure total pack voltage and voltage sag during switch press, then trace power forward before firmware work.
+
+## 2026-09-05 — COM3 ownership is unresolved
+
+**Decision:** Do not assign COM3 to K210 or STM32 until the physical USB/UART routing is mapped.
+
+**Reason:** The opened lower board exposes its own micro-USB, DOWNLOAD/CALIBRATE controls and multiple 4-pin service/serial connectors. The original protocol also explicitly documents two motherboard TTL serial connectors.
+
+## 2026-09-05 — `G CLK DIO 3V3` is a connector label, not a proven test point
+
+**Decision:** Treat the adjacent populated 4-pin connector as a likely STM32 SWD interface only after electrical verification.
+
+**Reason:** The labels strongly match GND/SWCLK/SWDIO/3.3V conventions, but no exact board schematic has been found. Do not attach an ST-Link based on silkscreen inference alone.
 
 ## 2026-09-03 — robot arm remains separate initially
 
