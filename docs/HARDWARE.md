@@ -4,7 +4,7 @@ Updated: 2026-09-06
 
 ## XGO-Mini — original Kickstarter/K210 generation
 
-Status: original 2021 lower-board electronics are no longer the preferred repair target. Vendor-supported retrofit path is available.
+Status: original 2021 lower-board electronics are no longer the preferred repair target. A vendor-supported ESP32 replacement board has been purchased.
 
 ### Original hardware
 
@@ -35,9 +35,7 @@ RobotShop legacy XGO-Mini documentation identifies this generation as:
 
 Historical reverse-engineering notes remain in `docs/BOARD_DIAGNOSTICS.md`, `docs/RECOVERY_SOURCES.md` and prior session logs.
 
-## Vendor-supported ESP32 replacement — confirmed 2026-09-06
-
-Luwu Dynamics / XGO offered a new replacement package for the original chassis.
+## Vendor-supported ESP32 replacement — purchased 2026-09-06
 
 ### Confirmed compatibility
 
@@ -47,9 +45,9 @@ Vendor explicitly confirmed:
 - it is a newer adapted revision, not the original STM32 V2.5 board;
 - it is designed to work with the **existing original XGO-Mini chassis**;
 - it is designed to work with the **original 12 servos**;
-- normal locomotion can therefore be restored without replacing the mechanical platform or the 12 leg servos.
+- normal locomotion can therefore be restored without replacing the mechanical platform or leg servos.
 
-This is the most important hardware compatibility fact for the retrofit.
+This is the critical retrofit compatibility fact.
 
 ### Control interface
 
@@ -61,44 +59,94 @@ Vendor confirmed:
 - UART logic level: **3.3 V TTL**;
 - interface signals stated as `TX/RX/GND`;
 - direct connection to Raspberry Pi GPIO is supported without level shifting;
-- exact firmware version/model identifier and command mapping sheet will be supplied with the replacement board.
+- exact firmware version/model identifier and command mapping will be supplied for the replacement board.
 
-### Package / price
+### Purchased option / price
 
-Quoted package:
+Chosen and paid:
 
-- ESP32 replacement driver board;
-- compatible battery kit;
+- **Option 1: ESP32 replacement driver board only**;
+- price: **USD 50**;
 - shipping to Hungary included;
-- total: **USD 75**.
+- payment: PayPal, completed 2026-09-06;
+- battery not included.
 
-Exact connector set / adapter cabling is still to be confirmed when the order is prepared.
+Current state: waiting for shipment/tracking.
 
-### Battery
+## Current ESP32 XGO driver-board family — reference only
 
-Original chassis uses removable 18650 cells, but the exact power implementation expected by the new ESP32 replacement board is not yet documented in the repository.
+Official current XGO hardware documentation updated 2026-08 describes modern quadruped driver boards using:
 
-Do not assume the replacement can use any arbitrary 2S holder until the supplied wiring/connector/BMS arrangement is known.
+- **ESP32-WROVER-B**;
+- onboard IMU;
+- servo connectors;
+- power connector;
+- switch connector;
+- external serial interfaces supporting **5 V / 3.3 V**;
+- servo-reset and ESP32-reset controls;
+- high-current **5 V / 6 A continuous** DC-DC output capability;
+- power / IMU / servo-communication status LEDs.
 
-If the vendor later confirms that a standard 2S 18650 arrangement is acceptable, locally sourced matched cells may be used as a cost-saving option. Until then the compatible vendor battery kit is the safe baseline.
+The official page shows an XGO-mini2 board and links an `XGOMINI.pdf` schematic.
+
+Reference:
+- https://wiki.xgorobot.com/kb/common-resources/cmsss6atk0021mb24fnrmxahr
+
+Do not assume the purchased board is exactly this PCB revision until it arrives.
+
+### Current firmware reference
+
+Current official firmware documentation maps:
+
+- `M` -> XGO-mini2S;
+- `L` -> XGO-lite3;
+- `R` -> XGO-Rider2;
+- `W` -> XGO-mini3W.
+
+Current driver-board flashing uses an ESP32 UART workflow at 115200 baud, but no firmware should be flashed to the retrofit board until the exact shipped profile is confirmed.
+
+Reference:
+- https://wiki.xgorobot.com/kb/common-resources/83a7395c0f00416bb26303803de5b1e5
+
+## Battery
+
+The original chassis uses removable 18650-format cells and historically ran a 7.4 V / 2S arrangement. Current XGO2 reference material also describes two 18650 cells, but the exact power connector/protection arrangement of the purchased retrofit board is still unknown.
+
+Tamás has several 18650 cells available from an older solar project.
+
+Initial plan:
+
+- wait for the board;
+- verify exact power input, connector and polarity;
+- use two matched healthy cells for a short 1–2 minute functional test;
+- if voltage sag or resets occur under servo load, buy a matched high-current pair later;
+- do not convert to LiPo until allowed voltage range, protection and charging assumptions are known.
 
 ## Upper module / HMI implications
 
 ### Legacy K210 module
 
-The old K210 display/camera module is no longer required for the target architecture.
+The original K210 display/camera module may be tested later over UART if convenient, but is no longer required for the target architecture.
 
-It may be retained for archival/testing purposes, but the preferred modern path is a separate SBC-based upper controller.
+### Raspberry Pi 4B
 
-### Current Lite3 / CM5 / arm modules
+The vendor-confirmed 3.3 V TTL UART makes an existing Raspberry Pi 4B a practical future upper controller for Wi-Fi, web UI, camera, audio and Local GPU/PC offload.
 
-Vendor confirmed that current Lite3 / CM5 AI modules and modular robotic arms are **not direct plug-and-play** with the original chassis because of newer mounting, cable routing and integration architecture.
+### ESP32-S3 compact upper HMI
 
-Therefore:
+Luwu Dynamics' open-source `RIG-Omni` project is a useful modern reference for a compact ESP32-S3 upper layer with:
 
-- do not assume current-generation head assemblies will physically fit;
-- do not assume current robotic-arm modules will electrically/mechanically attach directly;
-- these may still serve as design references for custom secondary development.
+- Wi-Fi/BLE;
+- 240x240 SPI display;
+- camera;
+- I2S audio;
+- XGO UART protocol;
+- OTA / remote-control features.
+
+Reference:
+- https://github.com/LuwuDynamics/rig_omni
+
+This is not assumed to be a drop-in XGO-Mini head. It is a possible future design pattern after locomotion is validated.
 
 ## Target hardware architecture
 
@@ -107,19 +155,21 @@ Original 2021 aluminum chassis
         |
 Original 12 leg servos
         |
-Vendor ESP32 replacement motion board
+Purchased vendor ESP32 replacement motion board
         |
 3.3 V TTL UART
         |
-Custom Raspberry Pi / CM / SBC upper controller
-        |-- inexpensive display
-        |-- modern camera
-        |-- microphone / speaker
-        |-- Wi-Fi / network
-        `-- Local GPU / PC integration
+Optional upper controller
+        |-- legacy K210 temporarily, or
+        |-- existing Raspberry Pi 4B, or
+        `-- compact ESP32-S3 HMI
+              |-- display
+              |-- camera
+              |-- Wi-Fi
+              `-- audio / sensors as needed
 ```
 
-This architecture intentionally separates the vendor-supported motion layer from the user-owned AI/HMI layer.
+Detailed current-generation comparison and arrival checklist: `docs/ESP32_RETROFIT_RESEARCH.md`.
 
 ## Legacy robot arm
 
