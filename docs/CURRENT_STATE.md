@@ -4,27 +4,51 @@ Updated: 2026-09-06
 
 ## Status
 
-The project direction has changed from repairing the unsupported 2021 STM32 V2.5 lower board to a **vendor-supported ESP32 retrofit** while preserving the original XGO-Mini chassis and 12 servos.
+The project has moved from repairing the unsupported 2021 STM32 V2.5 lower board to a **vendor-supported ESP32 retrofit** while preserving the original XGO-Mini chassis and 12 servos.
 
-Luwu Dynamics / XGO confirmed directly that they can supply an **ESP32-based replacement driver board + compatible battery kit for USD 75 including shipping to Hungary**. They explicitly confirmed that this replacement board is designed to work with the **original chassis and all 12 original servos**.
+The selected retrofit has now been **ordered and paid**:
 
-This is now the preferred recovery path unless a materially better/cheaper official option appears. The old STM32 board can remain as a reverse-engineering/archive item, but repairing it is no longer the primary objective.
+- **Option 1: ESP32 replacement driver board only**;
+- price: **USD 50**;
+- shipping to Hungary included;
+- payment completed via PayPal on 2026-09-06;
+- battery intentionally omitted because compatible cells can be sourced locally if the board uses the expected 2S/18650 power arrangement;
+- current state: **WAITING FOR SHIPMENT / TRACKING / EXACT BOARD DETAILS**.
+
+The old STM32/K210 electronics are now archival/fallback hardware. Component-level repair is no longer the main task.
 
 ## Vendor-confirmed retrofit facts — 2026-09-06
 
 Pengfei (Bency) Liu / Luwu Dynamics confirmed:
 
 - replacement board is **ESP32-based**, not the old STM32 V2.5 generation;
-- it is adapted to the original XGO-Mini chassis and **existing 12 servos**;
+- it is an adapted replacement intended for the original XGO-Mini chassis;
+- it works with the **existing original 12 servos**;
 - it runs the standardized underlying XGO serial protocol;
 - standard locomotion, pose and kinematics calls are compatible with **`xgolib`**;
-- exact firmware version / model identifier and command mapping sheet will be provided with the replacement board;
+- exact firmware version/model identifier and command mapping will be provided for the shipped board;
 - board exposes **3.3 V TTL UART** (`TX/RX/GND`) for external Raspberry Pi / SBC / PC control;
-- direct Raspberry Pi GPIO connection is supported without a level shifter on that UART;
-- current Lite3 / CM5 AI modules and current modular robotic arms are **not direct plug-and-play** with the old chassis because of mechanical, cable-routing and newer integration differences;
-- custom upper-layer development is expected to be done as secondary development;
-- vendor will not provide the legacy servo bus protocol, legacy board schematic or full legacy hardware documentation;
-- current practical official solution is the ESP32 replacement board + battery kit.
+- direct Raspberry Pi GPIO UART connection is supported without a level shifter;
+- current Lite3 / CM5 AI modules and current modular robotic arms are **not direct plug-and-play** with the old chassis because of generational mechanical/electrical integration differences;
+- custom upper-layer development is expected to be secondary development;
+- vendor will not provide the legacy servo bus protocol, legacy board schematic or full legacy hardware documentation.
+
+## Current-generation reference research
+
+Current official XGO documentation, updated 2026-08, shows the present quadruped driver-board family using **ESP32-WROVER-B**, onboard IMU, servo/switch/power connectors, 5 V / 3.3 V serial interfaces, reset controls and a high-current 5 V / 6 A DC-DC subsystem.
+
+Current firmware documentation identifies present ESP32 profiles by prefix:
+
+- `M` — XGO-mini2S;
+- `L` — XGO-lite3;
+- `R` — XGO-Rider2;
+- `W` — XGO-mini3W.
+
+Current official `xgolib` observed version is **1.4.2**, using 115200 baud by default and firmware-prefix auto-detection.
+
+These are useful comparison references only. **Do not assume the purchased retrofit PCB is exactly the current XGO-mini2 board until the physical board and vendor-supplied firmware/profile are inspected.**
+
+Detailed notes: `docs/ESP32_RETROFIT_RESEARCH.md`.
 
 ## Intended architecture
 
@@ -39,76 +63,86 @@ new vendor ESP32 motion controller
           |
           | 3.3 V TTL UART / xgolib-compatible command set
           v
-custom modern upper controller
-  - Raspberry Pi / CM / other SBC
-  - inexpensive modern display/HMI
-  - modern camera
-  - microphone / speaker as needed
-  - Wi-Fi / network access
-  - Local GPU Helper / PC for heavier AI
+optional modern upper controller
+  - existing Raspberry Pi 4B / other SBC, or
+  - compact ESP32-S3 HMI, or
+  - legacy K210 temporarily if useful
+          |
+          +-- camera
+          +-- optional display
+          +-- microphone / speaker
+          +-- Wi-Fi / network access
+          `-- PC / Local GPU Helper for heavier AI
 ```
 
-The motion layer should stay vendor-compatible. The upper AI/HMI layer should be treated as replaceable and project-owned.
+The motion layer should stay vendor-compatible. The upper AI/HMI layer is intentionally replaceable and project-owned.
 
 ## HMI / camera direction
 
-The old K210 display/camera module is no longer considered strategically important.
+Do **not** buy a new display/camera module before validating the new motion board.
 
-If it happens to work with the new board, it may be useful temporarily, but the preferred long-term direction is a **new simple display + camera + SBC** rather than carrying the old K210 firmware/software constraints forward.
+The final display may not need to be large at all if the main UI is phone/web based. A small local screen could be used only for status, face/animation, battery/Wi-Fi state and debug information.
 
-There is no requirement to buy a complete Lite3/mini2-class robot or a full current-generation head assembly. A low-cost custom HMI is acceptable and likely preferable for education/research.
+Possible upper-layer paths after motion works:
+
+1. test the old K210 head over UART if convenient;
+2. use the existing Raspberry Pi 4B over the vendor-confirmed 3.3 V UART;
+3. later build a compact ESP32-S3 display/camera/Wi-Fi upper module if a smaller embedded solution is preferable.
+
+Luwu Dynamics' open-source `RIG-Omni` ESP32-S3 project is a useful design reference for option 3, but is not assumed to be a drop-in XGO head.
 
 ## Battery direction
 
-Original robot uses two removable 18650-format cells and historical specification is 7.4 V / 2500 mAh.
+Board-only was chosen because it reduces the retrofit cost from USD 75 to **USD 50**.
 
-Known old cells were degraded; one original cell was later measured around ~1 V during troubleshooting, while replacement/test cells around ~3.7 V did not revive the old STM32 board.
+Tamás already has multiple 18650 cells from an older solar project. No new battery should be purchased before the incoming board's exact voltage, connector, polarity and protection expectations are checked.
 
-Because the vendor quote includes a compatible battery, the exact battery requirement of the new ESP32 retrofit should be recorded when the kit details arrive.
+First-test rule:
 
-Potential cost optimization for later discussion only:
+- use two matched, healthy cells only after power requirements are verified;
+- a short 1–2 minute functional motion test is enough to prove the retrofit works;
+- if cells sag/reset the board under servo load, buy a matched high-current pair later;
+- LiPo conversion is possible only after the board's permitted voltage range and power/charging design are known.
 
-- if the replacement board accepts a standard 2S 18650 arrangement and no proprietary pack/BMS is required, Tamás can source suitable cells locally;
-- if vendor battery/connector/BMS is specific to the retrofit, use the supplied kit.
-
-No new email is required now; wait for the vendor's next response/invoice before changing the order scope.
-
-## Robot arm / future expansion
-
-Current-generation Lite3/mini2 robotic-arm modules are **not plug-and-play** on the old chassis according to the vendor.
-
-This does not prohibit future custom manipulation work. It means:
-
-- do not assume current arm hardware mechanically/electrically drops in;
-- first revive locomotion with the ESP32 retrofit;
-- later evaluate a custom gripper/arm or the separate legacy university robot arm;
-- treat any arm integration as a separate secondary-development phase.
+Current XGO2 reference material also uses two 18650 cells, but this does not by itself prove the retrofit board's exact battery wiring.
 
 ## Current milestone
 
-### M1 — procure and validate ESP32 retrofit
+### M1 — receive and identify the purchased ESP32 retrofit
 
 Pending:
 
-1. receive vendor invoice/payment link;
-2. confirm final shipping details and exact kit contents;
-3. order the ESP32 replacement board + battery kit if no better official option is offered;
-4. record exact replacement-board firmware/model identifier when received;
-5. record supplied connector/pinout/command mapping;
-6. install board into original chassis and connect original 12 servos;
-7. perform first vendor-baseline motion test;
-8. verify UART control from PC/Pi using the supplied mapping / `xgolib`;
-9. only then design the custom modern HMI/camera layer.
+1. vendor ships the paid board and provides tracking;
+2. receive exact firmware/model identifier and command mapping;
+3. photograph the board front/back before installation;
+4. record PCB revision, ESP32 module, connector labels and pinouts;
+5. compare physical layout with current XGO-mini2-family reference material;
+6. verify power input and select a matched local battery pair;
+7. install board into original chassis and connect all 12 servos + switch;
+8. perform minimal vendor-baseline startup test;
+9. verify UART and `xgolib` control only after normal boot;
+10. then decide K210 vs Pi 4B vs ESP32-S3 upper-layer path.
+
+## Arrival safety / identification rules
+
+- do not flash any firmware before the incoming board is identified;
+- do not assume current `M`-series firmware is correct merely because the board is ESP32-based;
+- do not assume connector polarity/order from visual similarity alone;
+- do not run full action sequences as the first motion test;
+- place the robot on a flat surface with leg clearance before initialization;
+- retain all supplied adapter cables and photograph their routing before modifying connectors.
 
 ## Procurement context
 
-Original XGO-Mini was backed on Kickstarter in 2021 for approximately **USD 624 total** including shipping. The current goal is not to obtain a newer USD 1000+ robot cheaply; it is to revive and modernize the already-owned platform at the lowest sensible cost.
+Original XGO-Mini was backed on Kickstarter in 2021 for approximately **USD 624 total** including shipping.
 
-A roughly USD 75 ESP32 motion-controller retrofit is considered reasonable if it restores reliable locomotion and provides a current, documented development interface.
+The objective is not to obtain a newer USD 1000+ robot cheaply. The objective is to reuse the already-owned aluminum mechanics and 12 servos while replacing the unsupported motion electronics at minimum sensible cost.
+
+The board-only purchase at **USD 50 shipped** is now the chosen cost-effective recovery path.
 
 ## Superseded troubleshooting path
 
-The following work remains documented but is no longer the primary path:
+The following work remains documented but is no longer primary:
 
 - repair/reverse-engineer original STM32 V2.5 power path;
 - recover old K210 firmware stack;
@@ -116,11 +150,3 @@ The following work remains documented but is no longer the primary path:
 - locate original board schematic / servo protocol.
 
 Keep these notes for reference, but do not spend additional time on them unless the ESP32 retrofit fails or becomes unavailable.
-
-## Do not do now
-
-- do not continue blind component-level repair of the old STM32 board;
-- do not buy a complete Lite3 / mini2-class robot solely to modernize this chassis;
-- do not assume current Lite3/CM5 head or current robotic arm is plug-and-play;
-- do not design the new HMI around undocumented legacy K210 behavior;
-- do not create another support email until the vendor responds or an ordering decision requires clarification.
