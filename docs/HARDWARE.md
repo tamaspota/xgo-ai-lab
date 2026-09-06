@@ -1,12 +1,12 @@
 # HARDWARE
 
-Updated: 2026-09-05
+Updated: 2026-09-06
 
 ## XGO-Mini — original Kickstarter/K210 generation
 
-Status: physically opened for battery/power-path diagnosis and lower-board inspection.
+Status: original 2021 lower-board electronics are no longer the preferred repair target. Vendor-supported retrofit path is available.
 
-### Verified period hardware specification
+### Original hardware
 
 RobotShop legacy XGO-Mini documentation identifies this generation as:
 
@@ -19,114 +19,110 @@ RobotShop legacy XGO-Mini documentation identifies this generation as:
 - microphone: MEMS digital microphone;
 - keys: 3 programmable keys;
 - battery: **7.4 V 2500 mAh**;
-- battery cell description on RobotShop legacy page: **standard 18650, 2500 mAh, 3C discharge**;
+- battery cell description on legacy product material: standard 18650, 2500 mAh, 3C discharge;
 - 12 DOF quadruped with serial-bus servos;
 - original charger: 8.4 V / 1 A.
 
-### Installed firmware indication
+### Original board / failure observations
 
-Powered LCD previously showed firmware/version text approximately matching `xgo-210722`, closely matching historical K210 recovery package `xgo-ai-module-firmware-210722-en-2021-07-22-14-48-10.kfpkg`.
+- lower-board date marking: `20211027`;
+- old controller generation: STM32 / V2.5-era board;
+- original K210 firmware text previously appeared approximately as `xgo-210722`;
+- battery-powered startup failed despite testing replacement cells;
+- old board showed some USB-powered activity but no reliable battery-powered startup;
+- no obvious external burn/damage was observed on the old board;
+- vendor states this generation is discontinued and no longer supported with official legacy schematics/firmware/support.
 
-### Windows discovery
+Historical reverse-engineering notes remain in `docs/BOARD_DIAGNOSTICS.md`, `docs/RECOVERY_SOURCES.md` and prior session logs.
 
-- Silicon Labs CP210x/CP2102 enumerated on **COM3**;
-- VID:PID `10C4:EA60`;
-- serial `0001`;
-- raw XGO firmware-read on COM3 at 115200: no response;
-- serial probe once received three CR/LF pairs; later probes silent; no REPL.
+## Vendor-supported ESP32 replacement — confirmed 2026-09-06
 
-COM3 physical ownership is **not yet resolved**.
+Luwu Dynamics / XGO offered a new replacement package for the original chassis.
 
-### Battery construction and measured state — 2026-09-05
+### Confirmed compatibility
 
-Observed:
+Vendor explicitly confirmed:
 
-- two removable 18650-format Li-ion cells in a chassis holder;
-- historical 7.4 V specification strongly implies 2S operation;
-- holder has a visible `+` marking in the photographed upper cell bay;
-- original cells measured approximately **3.74 V** and **3.70 V** open circuit;
-- normal power-button startup still produces no visible response.
+- replacement lower board is **ESP32-based**;
+- it is a newer adapted revision, not the original STM32 V2.5 board;
+- it is designed to work with the **existing original XGO-Mini chassis**;
+- it is designed to work with the **original 12 servos**;
+- normal locomotion can therefore be restored without replacing the mechanical platform or the 12 leg servos.
 
-Interpretation:
+This is the most important hardware compatibility fact for the retrofit.
 
-- neither cell is obviously deeply discharged from open-circuit voltage alone;
-- open-circuit voltage does not prove usable current capability;
-- aged/high-resistance cells may sag heavily during startup;
-- a RobotShop support case with essentially the same XGO-Mini K210 no-start symptom was fixed by replacing the batteries, making battery/current-delivery failure plausible but not proven here.
+### Control interface
 
-Next electrical measurement is the holder **pack-end voltage** and its sag during power-button press.
+Vendor confirmed:
 
-### Exposed lower/controller board — 2026-09-05
+- standardized underlying XGO serial protocol;
+- compatibility with the core `xgolib` command set for standard locomotion, pose adjustments and kinematics calls;
+- onboard external UART intended for Raspberry Pi / SBC / PC;
+- UART logic level: **3.3 V TTL**;
+- interface signals stated as `TX/RX/GND`;
+- direct connection to Raspberry Pi GPIO is supported without level shifting;
+- exact firmware version/model identifier and command mapping sheet will be supplied with the replacement board.
 
-Photographed board features:
+### Package / price
 
-- visible board date marking **`20211027`**;
-- lower-board micro-USB;
-- 4-pin `SWITCH` harness connector;
-- two board-mounted mode switches labelled DOWNLOAD and CALIBRATE;
-- physically populated white 4-pin connector immediately adjacent to silkscreen **`G CLK DIO 3V3`**;
-- multiple additional 4-pin connectors near the lower-board micro-USB, including one carrying colored wires.
+Quoted package:
 
-#### Correction: `G CLK DIO 3V3`
+- ESP32 replacement driver board;
+- compatible battery kit;
+- shipping to Hungary included;
+- total: **USD 75**.
 
-This is not a free-standing test point. It is silkscreen next to a 4-pin connector.
+Exact connector set / adapter cabling is still to be confirmed when the order is prepared.
 
-Engineering inference only:
+### Battery
 
-- `G` -> likely GND;
-- `CLK` -> likely SWCLK;
-- `DIO` -> likely SWDIO;
-- `3V3` -> likely target-voltage reference.
+Original chassis uses removable 18650 cells, but the exact power implementation expected by the new ESP32 replacement board is not yet documented in the repository.
 
-This is strongly consistent with STM32 SWD naming, but it must be electrically verified before attaching an ST-Link.
+Do not assume the replacement can use any arbitrary 2S holder until the supplied wiring/connector/BMS arrangement is known.
 
-#### Serial connectors
+If the vendor later confirms that a standard 2S 18650 arrangement is acceptable, locally sourced matched cells may be used as a cost-saving option. Until then the compatible vendor battery kit is the safe baseline.
 
-The original XGO-Mini Communication Protocol V1.0 explicitly states that **two serial communication interfaces exist on one side of the motherboard**, with external supply voltages of 5 V and 3.3 V. It also states that the **3.3 V terminal is occupied by the AI module by default**.
+## Upper module / HMI implications
 
-The photographed two 4-pin connector area near the lower-board micro-USB is therefore a strong match for the documented TTL UART interfaces. Exact pin order still needs a clear silkscreen read/continuity map.
+### Legacy K210 module
 
-### Power-path measurement method without schematic
+The old K210 display/camera module is no longer required for the target architecture.
 
-With **all USB disconnected and both cells removed**:
+It may be retained for archival/testing purposes, but the preferred modern path is a separate SBC-based upper controller.
 
-1. use continuity mode to map accessible battery-holder solder tabs to each metal cell contact;
-2. identify any direct 2S series bridge between one cell end and the opposite cell end;
-3. the remaining two rails are the likely pack endpoints;
-4. reinstall two matched cells with verified polarity;
-5. measure across the pack endpoints — with ~3.7 V cells, expected magnitude is roughly ~7.4 V;
-6. press the power switch while measuring the same points and observe voltage sag.
+### Current Lite3 / CM5 / arm modules
 
-Do not infer polarity only from spring shape.
+Vendor confirmed that current Lite3 / CM5 AI modules and modular robotic arms are **not direct plug-and-play** with the original chassis because of newer mounting, cable routing and integration architecture.
 
-Detailed working notes: `docs/BOARD_DIAGNOSTICS.md`.
+Therefore:
 
-### Historical built-in self-test
+- do not assume current-generation head assemblies will physically fit;
+- do not assume current robotic-arm modules will electrically/mechanically attach directly;
+- these may still serve as design references for custom secondary development.
 
-Historical K210 `sd/main.py` can enter test mode by holding the left/A button during boot. It runs `/sd/device_test.py` and tests LCD, camera, microphone, SD card, speaker, A/B/C buttons and LEDs.
+## Target hardware architecture
 
-See `docs/FACTORY_SELF_TEST.md`.
+```text
+Original 2021 aluminum chassis
+        |
+Original 12 leg servos
+        |
+Vendor ESP32 replacement motion board
+        |
+3.3 V TTL UART
+        |
+Custom Raspberry Pi / CM / SBC upper controller
+        |-- inexpensive display
+        |-- modern camera
+        |-- microphone / speaker
+        |-- Wi-Fi / network
+        `-- Local GPU / PC integration
+```
 
-### Historical motion-controller interface
-
-XGO-Mini Communication Protocol V1.0 documents:
-
-- standard TTL serial;
-- XH2.54 4-pin;
-- 115200 baud, 8N1;
-- two motherboard serial connectors;
-- 3.3 V connector occupied by AI module by default.
-
-### Public schematic status
-
-No public board-level schematic/boardview for the photographed original `XGO MINI V2.5` / 2021 lower board has yet been found. Current diagnostic basis is period documentation + photographed silkscreen + continuity/voltage mapping.
-
-### Firmware compatibility warning
-
-Do **not** flash current ESP32 M-series XGO-Mini firmware onto this original K210 + STM32 generation.
+This architecture intentionally separates the vendor-supported motion layer from the user-owned AI/HMI layer.
 
 ## Legacy robot arm
 
-Status: physically available according to project context, technical details not yet recorded.
+A separate university-era robot arm is also available. It remains an independent future device until its controller, actuators, power and interface are identified.
 
-Still needed: photos, motor/servo types, controller board, power supply, communication interface and original university code/project files if available.
+A current XGO arm is not assumed compatible with this old chassis.
