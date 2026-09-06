@@ -68,27 +68,47 @@ This remains true for archival/reverse-engineering work on the old board.
 
 **Reason:** This preserves the expensive/useful mechanical platform and servos while moving the motion controller to a currently supported, programmable architecture.
 
+## 2026-09-06 — choose board-only Option 1 for USD 50 shipped
+
+**Decision:** Purchase **Option 1: ESP32 replacement driver board only** for **USD 50 including shipping**, rather than the USD 75 board+battery package.
+
+**Status:** paid by PayPal on 2026-09-06; waiting for shipment/tracking.
+
+**Reason:** Tamás already owns multiple 18650 cells and the board-only option cuts the retrofit cost by one third. Battery suitability will be verified only after the board's exact power input and connector are known.
+
 ## 2026-09-06 — preserve mechanics and servos; modernize electronics above the motion layer
 
 **Decision:** Target architecture is:
 
-`original aluminum chassis + original 12 servos + vendor ESP32 motion controller + custom modern upper compute/HMI`.
+`original aluminum chassis + original 12 servos + vendor ESP32 motion controller + optional modern upper compute/HMI`.
 
 **Reason:** This is the lowest-cost path to a reliable, maintainable educational/research platform without purchasing a complete newer XGO robot.
 
-## 2026-09-06 — old K210 HMI is optional, not a design dependency
+## 2026-09-06 — defer display/camera purchase until motion retrofit is validated
 
-**Decision:** Do not design the revived robot around the legacy K210 display/camera module.
+**Decision:** Do not buy a new display, camera or upper AI module before the incoming ESP32 board is identified and the original 12-servo chassis moves correctly.
 
-If it works with the replacement board, it may be used temporarily. Long-term preference is a simple modern SBC + inexpensive display + camera.
+After motion is validated, choose between:
 
-**Reason:** avoids legacy firmware constraints and gives full control over UI, vision, networking and AI integration.
+- temporary reuse of the legacy K210 head if UART-compatible;
+- existing Raspberry Pi 4B over vendor-confirmed 3.3 V UART;
+- compact ESP32-S3 HMI with Wi-Fi/display/camera if a smaller embedded solution is preferred.
 
-## 2026-09-06 — battery kit can be optimized only after retrofit power requirements are known
+**Reason:** phone/web control may make a large local display unnecessary, and the required upper architecture cannot be chosen well until the exact replacement-board interfaces are known.
 
-**Decision:** The quoted USD 75 board + battery kit is acceptable as a baseline. Do not remove the battery from the order unless the vendor confirms the replacement board accepts a standard locally sourced 2S 18650 arrangement without a specific pack/BMS/connector requirement.
+## 2026-09-06 — current XGO-mini2 driver documentation is reference, not identification
 
-**Reason:** locally sourced 18650 cells may be cheaper, but the first objective is a known-good supported retrofit.
+**Decision:** Use current XGO-mini2 / current ESP32 driver-board documentation as a comparison source only.
+
+**Reason:** current official material shows ESP32-WROVER-B, IMU, servo/switch/power connectors, 5 V / 3.3 V serial interfaces and current `M/L/R/W` firmware families, but the vendor described the purchased board as an adapted replacement revision. Do not flash or wire by assumption before inspecting the shipped board.
+
+Detailed reference: `docs/ESP32_RETROFIT_RESEARCH.md`.
+
+## 2026-09-06 — battery strategy after board-only purchase
+
+**Decision:** Use existing matched 18650 cells for initial short testing only after the retrofit board's voltage, polarity and connector requirements are verified.
+
+If existing cells sag under servo load, buy a matched high-current pair later. LiPo conversion is a future option only after the board's allowed voltage range and power architecture are confirmed.
 
 ## 2026-09-06 — current-generation robot arm remains a future custom integration, not a retrofit assumption
 
