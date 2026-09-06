@@ -187,3 +187,29 @@ It is plausible that the shipped retrofit is physically close to a current XGO-m
 - current XGO architecture separates ESP32 motion control from the upper compute layer through UART.
 
 However, this remains a **hypothesis until the board arrives**. Connector compatibility is likely but not assumed. If connector housings differ while electrical/protocol compatibility is confirmed, adapter cables or connector replacement are acceptable project work.
+
+## 11. Luwu Unified Firmware Flash Center — observed 2026-09-06
+
+Tamás inspected the current Luwu Dynamics web flasher at:
+- https://tools.luwudynamics.ai/
+
+Observed from the current UI/screenshots:
+
+- the site is branded **Unified Firmware Flash Center**;
+- it exposes separate model profiles for **XGO-mini2S, XGO-lite3, XGO-mini2SW, XGO-Rider2 and XGO-Ranger**;
+- these XGO profiles are shown as **ESP32** targets;
+- XGO-mini2S currently shows firmware **7.1.3**, dated **2026-08-01**;
+- Mini2S changelog shown in the UI: improved gait stability and fixed Bluetooth disconnection;
+- the flasher offers a browser-based **Web Flash** workflow and a model-selection interface;
+- the UI shows an erase-chip / system-firmware flash path and a high-speed flash setting around **921600 baud** for the web flashing operation.
+
+Project implication:
+
+If the incoming retrofit board reports a current supported XGO profile — especially an `M` / Mini-family profile — this web flash center may become the preferred future firmware-maintenance path. This would move the revived 2021 chassis into the current supported ESP32 firmware ecosystem rather than relying on the old K210/STM32 recovery stack.
+
+Important restriction:
+
+- **do not use the web flasher on arrival merely because the board is ESP32-based**;
+- first identify the physical board, firmware/profile and vendor mapping;
+- preserve the shipped firmware until compatibility with one of the public web-flash profiles is confirmed;
+- if the board is a retrofit-specific profile, follow Pengfei's supplied mapping/instructions instead of assuming Mini2S compatibility.
